@@ -460,17 +460,18 @@ class Spider
      */
     protected function fetchResource(UriInterface $uri)
     {
-        $this->dispatch(SpiderEvents::SPIDER_CRAWL_PRE_REQUEST, new GenericEvent($this, array('uri' => $uri)));
+        $event = new GenericEvent($this, array('uri' => $uri));
+        $this->dispatch(SpiderEvents::SPIDER_CRAWL_PRE_REQUEST, $event);
         try {
             $resource = $this->getRequestHandler()->request($uri);
             $resource->depthFound = $this->alreadySeenUris[$uri->toString()];
-            $this->dispatch(SpiderEvents::SPIDER_CRAWL_POST_REQUEST); // necessary until we have 'finally'
+            $this->dispatch(SpiderEvents::SPIDER_CRAWL_POST_REQUEST, , $event->setArgument('request' => $resource)); // necessary until we have 'finally'
             return $resource;
         } catch (\Exception $e) {
             $this->getStatsHandler()->addToFailed($uri->toString(), $e->getMessage());
 
-            $this->dispatch(SpiderEvents::SPIDER_CRAWL_ERROR_REQUEST);
-            $this->dispatch(SpiderEvents::SPIDER_CRAWL_POST_REQUEST); // necessary until we have 'finally'
+            $this->dispatch(SpiderEvents::SPIDER_CRAWL_ERROR_REQUEST, $event);
+            $this->dispatch(SpiderEvents::SPIDER_CRAWL_POST_REQUEST, $event); // necessary until we have 'finally'
 
             return false;
         }
